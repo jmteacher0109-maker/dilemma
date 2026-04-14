@@ -486,8 +486,24 @@
       roomUnsub: null,
       pendingOfferId: null,
       lastNotificationTs: 0,
-      restored: false
+      restored: false,
+      authReady: false
     };
+
+    function setEntryButtonsEnabled(enabled) {
+      els.createRoomBtn.disabled = !enabled;
+      els.joinRoomBtn.disabled = !enabled;
+      els.createRoomBtn.style.opacity = enabled ? '1' : '0.6';
+      els.joinRoomBtn.style.opacity = enabled ? '1' : '0.6';
+    }
+
+    async function waitForAuthReady(timeoutMs = 5000) {
+      const started = Date.now();
+      while (!state.uid && Date.now() - started < timeoutMs) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      return !!state.uid;
+    }
 
     const els = {
       hostNameInput: document.getElementById('hostNameInput'),
@@ -498,6 +514,8 @@
       acceptOfferBtn: document.getElementById('acceptOfferBtn'),
       rejectOfferBtn: document.getElementById('rejectOfferBtn')
     };
+
+    setEntryButtonsEnabled(false);
 
     function now() {
       return Date.now();
@@ -1007,84 +1025,146 @@
     }
 
     async function createRoom() {
-      const hostName = (els.hostNameInput.value || '사회자').trim().slice(0, 20) || '사회자';
-
-      for (let i = 0; i < 8; i++) {
-        const code = makeRoomCode();
-        const roomRef = ref(db, `rooms/${code}`);
-        const result = await runTransaction(roomRef, room => {
-          if (room) return;
-          return {
-            code,
-            phase: 'waiting',
-            hostUid: state.uid,
-            hostName,
-            createdAt: now(),
-            players: {},
-            offers: {},
-            trades: {},
-            notifications: {}
-          };
-        });
-        if (result.committed) {
-          state.roomCode = code;
-          state.role = 'host';
-          saveSession();
-          subscribeRoom(code);
-          showToast('게임 방이 생성되었습니다.');
-          return;
+      try {
+        if (!state.uid) {
+          const ready = await waitForAuthReady();
+          if (!ready) {
+            showToast('연결 준비 중입니다. 잠시 뒤 다시 시도해 주세요.');
+            return;
+          }
         }
+
+        const hostName = (els.hostNameInput.value || '사회자').trim().slice(0, 20) || '사회자';
+
+        for (let i = 0; i < 8; i++) {
+          const code = makeRoomCode();
+          const roomRef = ref(db, `rooms/${code}`);
+          const result = await runTransaction(roomRef, room => {
+            if (room) return;
+            return {
+              code,
+              phase: 'waiting',
+              hostUid: state.uid,
+              hostName,
+              createdAt: now(),
+              players: {},
+              offers: {},
+              trades: {},
+              notifications: {}
+            };
+          });
+          if (result.committed) {
+            state.roomCode = code;
+            state.role = 'host';
+            saveSession();
+            subscribeRoom(code);
+            showToast('게임 방이 생성되었습니다.');
+            return;
+          }
+        }
+        showToast('방 생성에 실패했습니다. 다시 시도해 주세요.');
+      } catch (error) {
+        console.error('createRoom error:', error);
+        showToast(`방 생성 오류: ${error?.message || '설정을 확인해 주세요.'}`);
       }
-      showToast('방 생성에 실패했습니다. 다시 시도해 주세요.');
     }
 
     async function joinRoom() {
-      const code = (els.joinCodeInput.value || '').trim().toUpperCase();
-      const nickname = (els.nicknameInput.value || '').trim().slice(0, 12);
-      if (!code || code.length < 4) {
-        showToast('올바른 방 코드를 입력해 주세요.');
-        return;
-      }
-      if (!nickname) {
-        showToast('닉네임을 입력해 주세요.');
-        return;
-      }
+      try {
+        if (!state.uid) {
+          const ready = await waitForAuthReady();
+          if (!ready) {
+            showToast('연결 준비 중입니다. 잠시 뒤 다시 시도해 주세요.');
+            return;
+          }
+        }
 
-      const roomRef = ref(db, `rooms/${code}`);
-      const result = await runTransaction(roomRef, room => {
-        if (!room) return;
-        if (room.phase !== 'waiting') return room;
-        room.players ||= {};
-        room.offers ||= {};
-        room.trades ||= {};
-        room.notifications ||= {};
-        room.players[state.uid] = {
-          nickname,
-          points: 0,
-          state: 'available',
-          joinedAt: room.players[state.uid]?.joinedAt || now(),
-          offerId: null,
-          tradeId: null
-        };
-        return room;
-      });
+        const rawCode = (els.joinCodeInput.value || '').trim().toUpperCase();
+        const code = rawCode.replace(/[^A-Z0-9]/g, '');
+        const nickname = (els.nicknameInput.value || '').trim().slice(0, 12);
+        els.joinCodeInput.value = code;
 
-      if (!result.snapshot.exists()) {
-        showToast('방을 찾을 수 없습니다.');
-        return;
+        if (!code || code.length < 4) {
+          showToast('올바른 방 코드를 입력해 주세요.');
+          return;
+        }
+        if (!nickname) {
+          showToast('닉네임을 입력해 주세요.');
+          return;
+        }
+
+        let resolvedCode = code;
+        let roomRef = ref(db, `rooms/${resolvedCode}`);
+        let roomSnap = await get(roomRef);
+
+        if (!roomSnap.exists()) {
+          const roomsSnap = await get(ref(db, 'rooms'));
+          if (roomsSnap.exists()) {
+            const rooms = roomsSnap.val() || {};
+            const foundEntry = Object.entries(rooms).find(([key, value]) => {
+              return key === code || String(value?.code || '').toUpperCase() === code;
+            });
+            if (foundEntry) {
+              resolvedCode = foundEntry[0];
+              roomRef = ref(db, `rooms/${resolvedCode}`);
+              roomSnap = { exists: () => true, val: () => foundEntry[1] };
+            }
+          }
+        }
+
+        if (!roomSnap.exists()) {
+          showToast('방을 찾을 수 없습니다. 같은 최신 파일을 사용 중인지와 방 코드를 다시 확인해 주세요.');
+          return;
+        }
+
+        const roomBefore = roomSnap.val();
+        if (roomBefore.phase !== 'waiting') {
+          showToast('이미 시작되었거나 종료된 방입니다. 대기실에서만 입장할 수 있습니다.');
+          return;
+        }
+
+        const result = await runTransaction(roomRef, room => {
+          if (!room) return;
+          if (room.phase !== 'waiting') return room;
+          room.players ||= {};
+          room.offers ||= {};
+          room.trades ||= {};
+          room.notifications ||= {};
+          room.players[state.uid] = {
+            nickname,
+            points: room.players[state.uid]?.points ?? 0,
+            state: 'available',
+            joinedAt: room.players[state.uid]?.joinedAt || now(),
+            offerId: null,
+            tradeId: null
+          };
+          return room;
+        });
+
+        if (!result.snapshot.exists()) {
+          showToast('방을 찾을 수 없습니다.');
+          return;
+        }
+
+        const after = result.snapshot.val();
+        if (after.phase !== 'waiting') {
+          showToast('이미 시작된 방입니다. 대기실에서만 입장할 수 있습니다.');
+          return;
+        }
+
+        state.roomCode = resolvedCode;
+        state.role = 'student';
+        saveSession();
+        subscribeRoom(resolvedCode);
+        showToast('방에 입장했습니다.');
+      } catch (error) {
+        console.error('joinRoom error:', error);
+        if (String(error?.code || '').includes('PERMISSION_DENIED') || String(error?.message || '').includes('permission_denied')) {
+          showToast('입장 권한이 없습니다. Realtime Database 규칙과 익명 로그인을 확인해 주세요.');
+        } else {
+          showToast(`방 입장 오류: ${error?.message || '설정을 확인해 주세요.'}`);
+        }
       }
-
-      const after = result.snapshot.val();
-      if (after.phase !== 'waiting') {
-        showToast('이미 시작된 방입니다. 대기실에서만 입장할 수 있습니다.');
-        return;
-      }
-
-      state.roomCode = code;
-      state.role = 'student';
-      saveSession();
-      subscribeRoom(code);
-      showToast('방에 입장했습니다.');
     }
 
     function subscribeRoom(code) {
@@ -1486,15 +1566,29 @@
     els.joinCodeInput.addEventListener('input', () => {
       els.joinCodeInput.value = els.joinCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
     });
+    els.joinCodeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') joinRoom();
+    });
+    els.nicknameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') joinRoom();
+    });
+    els.hostNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') createRoom();
+    });
 
     onAuthStateChanged(auth, async user => {
       if (user) {
         state.uid = user.uid;
+        state.authReady = true;
+        setEntryButtonsEnabled(true);
         authStateEl.className = 'badge badge-blue';
         authStateEl.textContent = '연결됨';
         await restorePreviousSession();
         render();
       } else {
+        state.uid = null;
+        state.authReady = false;
+        setEntryButtonsEnabled(false);
         authStateEl.className = 'badge badge-gray';
         authStateEl.textContent = '익명 인증 중...';
       }
@@ -1502,7 +1596,8 @@
 
     signInAnonymously(auth).catch(error => {
       console.error(error);
-      showToast('익명 로그인에 실패했습니다. Firebase 설정을 확인해 주세요.');
+      setEntryButtonsEnabled(false);
+      showToast('익명 로그인에 실패했습니다. Authentication의 Anonymous 활성화 여부를 확인해 주세요.');
     });
 
     setInterval(trackTimersAndNotifications, 500);
