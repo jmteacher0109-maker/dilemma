@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>딜레마 게임</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --primary: #2563eb;
+      --primary-weak: #dbeafe;
+      --danger: #dc2626;
+      --danger-weak: #fee2e2;
+      --good: #16a34a;
+      --good-weak: #dcfce7;
+      --warn: #d97706;
+      --warn-weak: #fef3c7;
+      --shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 20px 16px 48px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    .title-box {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .panel, .card, .hero {
+      background: var(--card);
+      border: 1px solid rgba(229, 231, 235, 0.85);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .hero-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      align-items: start;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    .panel {
+      padding: 20px;
+    }
+
+    .section-title {
+      margin-bottom: 14px;
+      font-size: 20px;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .input, .select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      font-size: 15px;
+      outline: none;
+      background: #fff;
+    }
+
+    .input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn {
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: 700;
+      transition: transform 0.08s ease, opacity 0.2s ease, background 0.2s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-ghost { background: #eef2ff; color: #3730a3; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-good { background: var(--good); color: white; }
+    .btn-light { background: #f3f4f6; color: #111827; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .badge-blue { background: var(--primary-weak); color: #1d4ed8; }
+    .badge-green { background: var(--good-weak); color: #15803d; }
+    .badge-red { background: var(--danger-weak); color: #b91c1c; }
+    .badge-yellow { background: var(--warn-weak); color: #b45309; }
+    .badge-gray { background: #f3f4f6; color: #4b5563; }
+
+    .info-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .info-chip {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+
+    .room-code {
+      font-size: 28px;
+      letter-spacing: 4px;
+      font-weight: 900;
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      display: inline-block;
+      margin-top: 10px;
+    }
+
+    .players-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .player-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 180px;
+    }
+
+    .player-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .player-name {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .money {
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .money.negative { color: var(--danger); }
+
+    .small {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .self-card {
+      border-color: #bfdbfe;
+      background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+    }
+
+    .center-panel {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .trade-box {
+      padding: 24px;
+      text-align: center;
+    }
+
+    .trade-choice-grid {
+      display: grid;
+      gap: 16px;
+      margin-top: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .choice-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      text-align: left;
+      background: #fff;
+    }
+
+    .choice-card h3 {
+      margin-bottom: 8px;
+      font-size: 22px;
+    }
+
+    .timer {
+      font-size: 34px;
+      font-weight: 900;
+      color: #0f172a;
+      margin: 10px 0 4px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+
+    .modal-backdrop.show { display: flex; }
+
+    .modal {
+      width: min(540px, 100%);
+      background: #fff;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 24px 70px rgba(2, 6, 23, 0.25);
+    }
+
+    .toast-wrap {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 100;
+    }
+
+    .toast {
+      background: #111827;
+      color: white;
+      padding: 12px 14px;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      min-width: 220px;
+      max-width: 320px;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      overflow: hidden;
+      border-radius: 16px;
+    }
+
+    th, td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      font-size: 15px;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #334155;
+      font-weight: 800;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .hidden { display: none !important; }
+
+    .divider {
+      height: 1px;
+      background: var(--line);
+      margin: 16px 0;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    @media (max-width: 700px) {
+      .wrap { padding: 14px 12px 36px; }
+      .timer { font-size: 28px; }
+      .room-code { font-size: 22px; }
+      .player-name { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title-box">
+        <h1>딜레마 게임</h1>
+        <p class="subtitle">Firebase Realtime Database 기반 실시간 교실용 죄수의 딜레마 게임</p>
+      </div>
+      <div id="authState" class="badge badge-gray">연결 준비 중...</div>
+    </div>
+
+    <div class="hero" id="homeView">
+      <div class="hero-grid">
+        <div class="panel">
+          <h2 class="section-title">사회자</h2>
+          <div class="stack">
+            <input id="hostNameInput" class="input" placeholder="사회자 이름 (예: 6-1 담임)" value="사회자" />
+            <button id="createRoomBtn" class="btn btn-primary">게임 방 생성</button>
+            <p class="small">사회자는 학생처럼 게임에 참여하지 않고, 대기실 관리 / 시작 / 종료만 담당합니다.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="section-title">학생</h2>
+          <div class="stack">
+            <input id="joinCodeInput" class="input" placeholder="방 코드 입력" maxlength="6" />
+            <input id="nicknameInput" class="input" placeholder="닉네임 입력" maxlength="12" />
+            <button id="joinRoomBtn" class="btn btn-good">방 입장</button>
+            <p class="small">학생은 닉네임과 방 코드를 입력해 단체로 입장합니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="appView" class="hidden"></div>
+  </div>
+
+  <div id="incomingOfferModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="stack">
+        <div>
+          <h2>거래 제안이 도착했어요</h2>
+          <p id="incomingOfferText" class="muted" style="margin-top:8px; line-height:1.5;"></p>
+        </div>
+        <div class="info-strip">
+          <span class="badge badge-blue">수락하면 즉시 거래소로 이동</span>
+          <span class="badge badge-red">입장 즉시 100포인트 차감</span>
+        </div>
+        <div class="row" style="justify-content:flex-end; margin-top:6px;">
+          <button id="rejectOfferBtn" class="btn btn-light">거절</button>
+          <button id="acceptOfferBtn" class="btn btn-primary">수락</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastWrap" class="toast-wrap"></div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js';
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signInAnonymously
+    } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+    import {
+      getDatabase,
+      ref,
+      get,
+      set,
+      update,
+      remove,
+      onValue,
+      runTransaction
+    } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js';
+
+    // ============================================================
+    // Firebase 설정값 반영 완료
+    // 주의: databaseURL은 Realtime Database 생성 지역에 따라 달라질 수 있습니다.
+    // 아래 값은 기본 형식으로 넣어두었습니다. 연결 오류가 나면 Firebase Console의
+    // Realtime Database 화면에 표시되는 URL로 이 한 줄만 바꿔 주세요.
+    // 그리고 Authentication > Sign-in method 에서 Anonymous 를 켜 주세요.
+    // ============================================================
+    const firebaseConfig = {
+      apiKey: 'AIzaSyCkgRwIDLGNyXin-83NIF102e0kER1cVdU',
+      authDomain: 'dilemma-784e3.firebaseapp.com',
+      projectId: 'dilemma-784e3',
+      storageBucket: 'dilemma-784e3.firebasestorage.app',
+      messagingSenderId: '471968767952',
+      appId: '1:471968767952:web:a9fe17e5ddc97ce538a3d5',
+      databaseURL: 'https://dilemma-784e3-default-rtdb.firebaseio.com'
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    const STORAGE_KEY = 'dilemma-game-session-v1';
+    const AUTO_KEYS_IN_FLIGHT = new Set();
+    const appView = document.getElementById('appView');
+    const homeView = document.getElementById('homeView');
+    const authStateEl = document.getElementById('authState');
+    const toastWrap = document.getElementById('toastWrap');
+    const incomingOfferModal = document.getElementById('incomingOfferModal');
+    const incomingOfferText = document.getElementById('incomingOfferText');
+
+    const state = {
+      uid: null,
+      roomCode: null,
+      role: null, // host | student
+      room: null,
+      roomUnsub: null,
+      pendingOfferId: null,
+      lastNotificationTs: 0,
+      restored: false
+    };
+
+    const els = {
+      hostNameInput: document.getElementById('hostNameInput'),
+      createRoomBtn: document.getElementById('createRoomBtn'),
+      joinCodeInput: document.getElementById('joinCodeInput'),
+      nicknameInput: document.getElementById('nicknameInput'),
+      joinRoomBtn: document.getElementById('joinRoomBtn'),
+      acceptOfferBtn: document.getElementById('acceptOfferBtn'),
+      rejectOfferBtn: document.getElementById('rejectOfferBtn')
+    };
+
+    function now() {
+      return Date.now();
+    }
+
+    function makeId(prefix = 'id') {
+      if (window.crypto?.randomUUID) return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
+      return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    function makeRoomCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let out = '';
+      for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
+      return out;
+    }
+
+    function escapeHtml(str = '') {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function fmtMoney(value = 0) {
+      const v = Number(value || 0);
+      return `${v.toLocaleString('ko-KR')}P`;
+    }
+
+    function fmtCountdown(ms) {
+      const sec = Math.max(0, Math.ceil(ms / 1000));
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function showToast(message) {
+      const div = document.createElement('div');
+      div.className = 'toast';
+      div.textContent = message;
+      toastWrap.appendChild(div);
+      setTimeout(() => {
+        div.style.opacity = '0';
+        div.style.transform = 'translateY(10px)';
+      }, 2600);
+      setTimeout(() => div.remove(), 3200);
+    }
+
+    function saveSession() {
+      if (!state.roomCode || !state.role) return;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ roomCode: state.roomCode, role: state.role }));
+    }
+
+    function clearSession() {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+
+    function getSavedSession() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      } catch {
+        return null;
+      }
+    }
+
+    function currentRoomRef() {
+      return ref(db, `rooms/${state.roomCode}`);
+    }
+
+    function getPlayers(room = state.room) {
+      return room?.players || {};
+    }
+
+    function getPlayer(room = state.room, uid = state.uid) {
+      return getPlayers(room)?.[uid] || null;
+    }
+
+    function getPlayerArray(room = state.room) {
+      return Object.entries(getPlayers(room)).map(([uid, p]) => ({ uid, ...p }));
+    }
+
+    function getOffer(room, offerId) {
+      return room?.offers?.[offerId] || null;
+    }
+
+    function getTrade(room, tradeId) {
+      return room?.trades?.[tradeId] || null;
+    }
+
+    function playerStateLabel(raw) {
+      switch (raw) {
+        case 'available': return '<span class="badge badge-green">거래 가능</span>';
+        case 'pending_out': return '<span class="badge badge-yellow">제안 중</span>';
+        case 'pending_in': return '<span class="badge badge-yellow">응답 중</span>';
+        case 'trading': return '<span class="badge badge-red">거래 중</span>';
+        default: return '<span class="badge badge-gray">대기</span>';
+      }
+    }
+
+    function sortPlayersForLobby(players) {
+      return [...players].sort((a, b) => {
+        const sa = a.joinedAt || 0;
+        const sb = b.joinedAt || 0;
+        if (sa !== sb) return sa - sb;
+        return String(a.nickname || '').localeCompare(String(b.nickname || ''), 'ko');
+      });
+    }
+
+    function sortPlayersForRank(players) {
+      return [...players].sort((a, b) => {
+        const diff = Number(b.points || 0) - Number(a.points || 0);
+        if (diff !== 0) return diff;
+        return String(a.nickname || '').localeCompare(String(b.nickname || ''), 'ko');
+      });
+    }
+
+    function isMyTurnDisabled() {
+      const me = getPlayer();
+      return !me || me.state !== 'available' || state.room?.phase !== 'running';
+    }
+
+    function getMyIncomingOffer() {
+      const me = getPlayer();
+      if (!me || me.state !== 'pending_in' || !me.offerId) return null;
+      const offer = getOffer(state.room, me.offerId);
+      if (!offer || offer.status !== 'pending' || offer.to !== state.uid) return null;
+      return offer;
+    }
+
+    function getMyTrade() {
+      const me = getPlayer();
+      if (!me || !me.tradeId) return null;
+      return getTrade(state.room, me.tradeId);
+    }
+
+    function choiceLabel(choice) {
+      if (choice === 'coop') return '협력';
+      if (choice === 'reject') return '거절';
+      return '미선택';
+    }
+
+    function resultSummary(trade, meUid) {
+      if (!trade) return { title: '거래 종료', body: '거래가 종료되었습니다.' };
+      if (trade.resultType === 'timeout') {
+        return {
+          title: '시간 종료',
+          body: '1분 안에 양쪽의 선택이 모두 완료되지 않아 거래가 종료되었습니다. 상대가 무엇을 눌렀는지는 공개되지 않습니다.'
+        };
+      }
+
+      const meIsA = trade.a === meUid;
+      const myChoice = meIsA ? trade.aChoice : trade.bChoice;
+      const otherChoice = meIsA ? trade.bChoice : trade.aChoice;
+
+      let title = '결과 공개';
+      if (trade.resultType === 'cc') title = '서로 협력';
+      if (trade.resultType === 'dd') title = '서로 거절';
+      if (trade.resultType === 'cd') title = '협력 / 거절';
+
+      return {
+        title,
+        body: `나의 선택: ${choiceLabel(myChoice)} / 상대의 선택: ${choiceLabel(otherChoice)}`
+      };
+    }
+
+    function renderHomeHidden(hidden) {
+      homeView.classList.toggle('hidden', hidden);
+      appView.classList.toggle('hidden', !hidden);
+    }
+
+    function render() {
+      const room = state.room;
+      if (!state.uid) {
+        authStateEl.className = 'badge badge-gray';
+        authStateEl.textContent = '익명 인증 중...';
+        renderHomeHidden(false);
+        return;
+      }
+
+      authStateEl.className = 'badge badge-blue';
+      authStateEl.textContent = `연결됨 · ${state.role === 'host' ? '사회자' : state.role === 'student' ? '학생' : '미정'}`;
+
+      if (!room || !state.roomCode) {
+        renderHomeHidden(false);
+        appView.innerHTML = '';
+        hideIncomingOffer();
+        return;
+      }
+
+      renderHomeHidden(true);
+
+      const phase = room.phase;
+      const me = getPlayer();
+      const players = getPlayerArray(room);
+      const waitingHtml = renderWaiting(room, players);
+      const lobbyHtml = renderLobby(room, players, me);
+      const tradeHtml = renderTrade(room, me);
+      const endHtml = renderLeaderboard(room, players);
+
+      if (phase === 'waiting') {
+        appView.innerHTML = waitingHtml;
+      } else if (phase === 'ended') {
+        appView.innerHTML = endHtml;
+      } else {
+        const myTrade = getMyTrade();
+        const showTrade = state.role === 'student' && me?.state === 'trading' && myTrade;
+        appView.innerHTML = showTrade ? tradeHtml : lobbyHtml;
+      }
+
+      bindDynamicEvents();
+      syncOfferModal();
+    }
+
+    function renderWaiting(room, players) {
+      const isHost = state.role === 'host';
+      const joined = sortPlayersForLobby(players);
+      return `
+        <div class="grid two">
+          <div class="panel">
+            <h2 class="section-title">대기실</h2>
+            <p class="muted">학생이 모두 모이면 사회자가 게임을 시작합니다.</p>
+            <div class="room-code">${escapeHtml(room.code || state.roomCode)}</div>
+            <div class="info-strip">
+              <div class="info-chip">사회자: <strong>${escapeHtml(room.hostName || '사회자')}</strong></div>
+              <div class="info-chip">현재 인원: <strong>${joined.length}명</strong></div>
+              <div class="info-chip">상태: <strong>대기 중</strong></div>
+            </div>
+            <div class="divider"></div>
+            <div class="row">
+              ${isHost ? '<button id="startGameBtn" class="btn btn-primary">게임 시작</button><button id="endGameBtn" class="btn btn-danger">게임 종료</button>' : '<span class="badge badge-yellow">사회자가 시작하기를 기다리는 중</span>'}
+              <button id="copyCodeBtn" class="btn btn-light">코드 복사</button>
+              <button id="leaveRoomBtn" class="btn btn-light">나가기</button>
+            </div>
+          </div>
+          <div class="panel">
+            <h2 class="section-title">참여 학생</h2>
+            <div class="list">
+              ${joined.length ? joined.map((p, idx) => `
+                <div class="list-item">
+                  <div><strong>${idx + 1}. ${escapeHtml(p.nickname || '이름 없음')}</strong></div>
+                  <span class="badge badge-gray">준비 완료</span>
+                </div>
+              `).join('') : '<p class="muted">아직 학생이 입장하지 않았습니다.</p>'}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLobby(room, players, me) {
+      const sorted = sortPlayersForLobby(players);
+      const isHost = state.role === 'host';
+      const myState = me?.state || 'available';
+      const headerRight = isHost
+        ? `<div class="row"><button id="endGameBtn" class="btn btn-danger">게임 종료</button><button id="leaveRoomBtn" class="btn btn-light">나가기</button></div>`
+        : `<div class="row"><button id="leaveRoomBtn" class="btn btn-light">나가기</button></div>`;
+
+      const myBanner = !isHost && me ? `
+        <div class="panel" style="margin-bottom: 16px;">
+          <div class="row" style="justify-content: space-between; align-items: center;">
+            <div>
+              <h2 class="section-title" style="margin-bottom: 6px;">현재 내 정보</h2>
+              <p class="muted">거래 중이 아닌 학생 한 명에게 거래를 제안할 수 있습니다.</p>
+            </div>
+            <div>${playerStateLabel(myState)}</div>
+          </div>
+          <div class="info-strip">
+            <div class="info-chip">닉네임: <strong>${escapeHtml(me.nickname)}</strong></div>
+            <div class="info-chip">보유 포인트: <strong>${fmtMoney(me.points)}</strong></div>
+            <div class="info-chip">게임 시작 시 기본 포인트: <strong>500P</strong></div>
+          </div>
+          ${me.state === 'pending_out' ? '<p class="small" style="margin-top:12px;">상대의 응답을 기다리는 중입니다. 응답 전에는 다른 학생에게 제안할 수 없습니다.</p>' : ''}
+          ${me.state === 'pending_in' ? '<p class="small" style="margin-top:12px;">누군가가 거래를 제안했습니다. 화면의 제안 창에서 수락 또는 거절을 선택하세요.</p>' : ''}
+          ${me.state === 'trading' ? '<p class="small" style="margin-top:12px;">현재 거래소에 입장한 상태입니다.</p>' : ''}
+        </div>
+      ` : '';
+
+      return `
+        ${myBanner}
+        <div class="panel">
+          <div class="row" style="justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div>
+              <h2 class="section-title" style="margin-bottom:6px;">로비</h2>
+              <p class="muted">학생 이름, 보유 돈, 현재 상태를 보고 거래 상대를 선택하세요.</p>
+            </div>
+            ${headerRight}
+          </div>
+          <div class="players-grid">
+            ${sorted.map(player => renderPlayerCard(player, me, isHost)).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPlayerCard(player, me, isHost) {
+      const isSelf = player.uid === state.uid;
+      const points = Number(player.points || 0);
+      const btnDisabled = isHost || isSelf || !me || me.state !== 'available' || player.state !== 'available';
+      const btnText = isSelf ? '나' : (player.state === 'available' ? '제안하기' : '제안 불가');
+      return `
+        <div class="player-card ${isSelf ? 'self-card' : ''}">
+          <div class="player-head">
+            <div>
+              <div class="player-name">${escapeHtml(player.nickname || '이름 없음')}</div>
+              <div class="small">${isSelf ? '내 카드' : '학생 카드'}</div>
+            </div>
+            ${playerStateLabel(player.state)}
+          </div>
+          <div class="money ${points < 0 ? 'negative' : ''}">${fmtMoney(points)}</div>
+          <div class="small">
+            ${isSelf ? '현재 나의 상태입니다.' : '거래 가능 상태일 때만 제안 버튼을 누를 수 있습니다.'}
+          </div>
+          <div style="margin-top:auto;">
+            ${isHost ? '<span class="badge badge-gray">사회자는 제안 불가</span>' : `<button class="btn btn-primary propose-btn" data-target="${player.uid}" ${btnDisabled ? 'disabled' : ''}>${btnText}</button>`}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTrade(room, me) {
+      const trade = getMyTrade();
+      if (!trade || !me) {
+        return `
+          <div class="panel center-panel">
+            <p class="muted">거래 정보를 불러오는 중입니다...</p>
+          </div>
+        `;
+      }
+
+      const partnerUid = trade.a === state.uid ? trade.b : trade.a;
+      const partner = getPlayer(room, partnerUid);
+      const myChoice = trade.a === state.uid ? trade.aChoice : trade.bChoice;
+      const isResolved = trade.status === 'resolved' || trade.status === 'closed' || trade.status === 'timeout';
+      const remaining = isResolved ? Math.max(0, (trade.returnAt || 0) - now()) : Math.max(0, (trade.expiresAt || 0) - now());
+      const result = resultSummary(trade, state.uid);
+
+      return `
+        <div class="panel center-panel trade-box">
+          <div class="row" style="justify-content: center; margin-bottom: 8px;">
+            <span class="badge badge-blue">거래 상대: ${escapeHtml(partner?.nickname || '알 수 없음')}</span>
+            <span class="badge badge-red">입장 시 100P 차감 완료</span>
+          </div>
+
+          <h2 class="section-title" style="margin-bottom: 6px;">${isResolved ? escapeHtml(result.title) : '거래소'}</h2>
+          <p class="muted" style="line-height:1.6;">
+            ${isResolved
+              ? escapeHtml(result.body)
+              : '상대와 동시에 선택합니다. 두 사람이 모두 선택하면 결과가 공개됩니다. 한쪽만 누른 채 시간이 끝나면 상대 선택은 공개되지 않습니다.'}
+          </p>
+
+          <div class="timer" data-live-timer="${isResolved ? (trade.returnAt || 0) : (trade.expiresAt || 0)}">${fmtCountdown(remaining)}</div>
+          <p class="small">${isResolved ? '자동으로 로비로 돌아가기까지 남은 시간' : '거래 종료까지 남은 시간'}</p>
+
+          ${isResolved ? `
+            <div class="info-strip" style="justify-content:center; margin-top: 18px;">
+              <div class="info-chip">내 보유 포인트: <strong>${fmtMoney(me.points)}</strong></div>
+              <div class="info-chip">상대 보유 포인트: <strong>${fmtMoney(partner?.points || 0)}</strong></div>
+            </div>
+            <div class="row" style="justify-content:center; margin-top: 18px;">
+              <button id="leaveTradeResultBtn" class="btn btn-light" data-trade-id="${trade.id}">나가기</button>
+            </div>
+          ` : `
+            <div class="trade-choice-grid">
+              <div class="choice-card">
+                <h3>협력</h3>
+                <p class="small">둘 다 협력을 누르면 각자 <strong>+200P</strong>를 얻습니다. 상대가 거절을 누르면 나는 <strong>-100P</strong>가 추가로 차감됩니다.</p>
+                <button class="btn btn-good trade-choice-btn" data-choice="coop" ${myChoice ? 'disabled' : ''} style="margin-top: 12px; width:100%;">협력 선택</button>
+              </div>
+              <div class="choice-card">
+                <h3>거절</h3>
+                <p class="small">둘 다 거절이면 추가 변화는 없습니다. 상대가 협력을 누른 상태에서 내가 거절하면 나는 <strong>+250P</strong>를 얻습니다.</p>
+                <button class="btn btn-danger trade-choice-btn" data-choice="reject" ${myChoice ? 'disabled' : ''} style="margin-top: 12px; width:100%;">거절 선택</button>
+              </div>
+            </div>
+            <div class="info-strip" style="justify-content:center; margin-top: 18px;">
+              <div class="info-chip">내 선택 상태: <strong>${myChoice ? choiceLabel(myChoice) + ' 선택 완료' : '아직 선택하지 않음'}</strong></div>
+              <div class="info-chip">현재 내 보유 포인트: <strong>${fmtMoney(me.points)}</strong></div>
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    function renderLeaderboard(room, players) {
+      const ranked = sortPlayersForRank(players);
+      const isHost = state.role === 'host';
+      return `
+        <div class="panel">
+          <div class="row" style="justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div>
+              <h2 class="section-title" style="margin-bottom:6px;">최종 순위표</h2>
+              <p class="muted">사회자가 게임을 종료했습니다. 보유 포인트 순으로 순위를 공개합니다.</p>
+            </div>
+            <div class="row">
+              <span class="badge badge-blue">방 코드 ${escapeHtml(room.code || state.roomCode)}</span>
+              <button id="leaveRoomBtn" class="btn btn-light">${isHost ? '메인으로' : '나가기'}</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:90px;">순위</th>
+                <th>이름</th>
+                <th style="width:180px;">보유 포인트</th>
+                <th style="width:160px;">상태</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${ranked.map((p, idx) => `
+                <tr>
+                  <td>${idx + 1}</td>
+                  <td>${escapeHtml(p.nickname || '이름 없음')}${p.uid === state.uid ? ' (나)' : ''}</td>
+                  <td>${fmtMoney(p.points)}</td>
+                  <td>${p.state === 'trading' ? '거래 중' : '게임 종료'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function bindDynamicEvents() {
+      document.getElementById('copyCodeBtn')?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(state.roomCode);
+          showToast('방 코드가 복사되었습니다.');
+        } catch {
+          showToast('복사에 실패했습니다. 직접 코드를 확인해 주세요.');
+        }
+      });
+
+      document.getElementById('startGameBtn')?.addEventListener('click', startGame);
+      document.getElementById('endGameBtn')?.addEventListener('click', endGame);
+      document.getElementById('leaveRoomBtn')?.addEventListener('click', leaveRoom);
+      document.getElementById('leaveTradeResultBtn')?.addEventListener('click', (e) => closeTradeAndReturn(e.currentTarget.dataset.tradeId));
+
+      document.querySelectorAll('.propose-btn').forEach(btn => {
+        btn.addEventListener('click', () => proposeTrade(btn.dataset.target));
+      });
+
+      document.querySelectorAll('.trade-choice-btn').forEach(btn => {
+        btn.addEventListener('click', () => submitTradeChoice(btn.dataset.choice));
+      });
+    }
+
+    function syncOfferModal() {
+      const offer = getMyIncomingOffer();
+      if (!offer) {
+        hideIncomingOffer();
+        return;
+      }
+      const proposer = getPlayer(state.room, offer.from);
+      state.pendingOfferId = offer.id;
+      incomingOfferText.textContent = `${proposer?.nickname || '상대'} 님이 거래를 제안했습니다. 수락하면 바로 거래소로 이동합니다.`;
+      incomingOfferModal.classList.add('show');
+    }
+
+    function hideIncomingOffer() {
+      state.pendingOfferId = null;
+      incomingOfferModal.classList.remove('show');
+    }
+
+    function trackTimersAndNotifications() {
+      if (!state.room) return;
+
+      document.querySelectorAll('[data-live-timer]').forEach(node => {
+        const target = Number(node.getAttribute('data-live-timer'));
+        node.textContent = fmtCountdown(target - now());
+      });
+
+      const note = state.room.notifications?.[state.uid];
+      if (note && note.ts && note.ts !== state.lastNotificationTs) {
+        state.lastNotificationTs = note.ts;
+        showToast(note.message || '알림이 도착했습니다.');
+        remove(ref(db, `rooms/${state.roomCode}/notifications/${state.uid}`)).catch(() => {});
+      }
+
+      if (state.role === 'host') {
+        sweepExpiredTradesAsHost();
+      } else if (state.role === 'student') {
+        const trade = getMyTrade();
+        if (trade) {
+          if (trade.status === 'active' && (trade.expiresAt || 0) <= now()) {
+            timeoutTrade(trade.id);
+          }
+          if ((trade.status === 'resolved' || trade.status === 'timeout' || trade.status === 'closed') && (trade.returnAt || 0) <= now()) {
+            closeTradeAndReturn(trade.id);
+          }
+        }
+      }
+    }
+
+    function sweepExpiredTradesAsHost() {
+      const trades = state.room?.trades || {};
+      for (const trade of Object.values(trades)) {
+        if (!trade?.id) continue;
+        if (trade.status === 'active' && (trade.expiresAt || 0) <= now()) {
+          timeoutTrade(trade.id);
+        }
+        if ((trade.status === 'resolved' || trade.status === 'timeout' || trade.status === 'closed') && (trade.returnAt || 0) <= now()) {
+          closeTradeAndReturn(trade.id);
+        }
+      }
+    }
+
+    async function createRoom() {
+      const hostName = (els.hostNameInput.value || '사회자').trim().slice(0, 20) || '사회자';
+
+      for (let i = 0; i < 8; i++) {
+        const code = makeRoomCode();
+        const roomRef = ref(db, `rooms/${code}`);
+        const result = await runTransaction(roomRef, room => {
+          if (room) return;
+          return {
+            code,
+            phase: 'waiting',
+            hostUid: state.uid,
+            hostName,
+            createdAt: now(),
+            players: {},
+            offers: {},
+            trades: {},
+            notifications: {}
+          };
+        });
+        if (result.committed) {
+          state.roomCode = code;
+          state.role = 'host';
+          saveSession();
+          subscribeRoom(code);
+          showToast('게임 방이 생성되었습니다.');
+          return;
+        }
+      }
+      showToast('방 생성에 실패했습니다. 다시 시도해 주세요.');
+    }
+
+    async function joinRoom() {
+      const code = (els.joinCodeInput.value || '').trim().toUpperCase();
+      const nickname = (els.nicknameInput.value || '').trim().slice(0, 12);
+      if (!code || code.length < 4) {
+        showToast('올바른 방 코드를 입력해 주세요.');
+        return;
+      }
+      if (!nickname) {
+        showToast('닉네임을 입력해 주세요.');
+        return;
+      }
+
+      const roomRef = ref(db, `rooms/${code}`);
+      const result = await runTransaction(roomRef, room => {
+        if (!room) return;
+        if (room.phase !== 'waiting') return room;
+        room.players ||= {};
+        room.offers ||= {};
+        room.trades ||= {};
+        room.notifications ||= {};
+        room.players[state.uid] = {
+          nickname,
+          points: 0,
+          state: 'available',
+          joinedAt: room.players[state.uid]?.joinedAt || now(),
+          offerId: null,
+          tradeId: null
+        };
+        return room;
+      });
+
+      if (!result.snapshot.exists()) {
+        showToast('방을 찾을 수 없습니다.');
+        return;
+      }
+
+      const after = result.snapshot.val();
+      if (after.phase !== 'waiting') {
+        showToast('이미 시작된 방입니다. 대기실에서만 입장할 수 있습니다.');
+        return;
+      }
+
+      state.roomCode = code;
+      state.role = 'student';
+      saveSession();
+      subscribeRoom(code);
+      showToast('방에 입장했습니다.');
+    }
+
+    function subscribeRoom(code) {
+      if (state.roomUnsub) state.roomUnsub();
+      state.roomCode = code;
+      const roomRef = ref(db, `rooms/${code}`);
+      state.roomUnsub = onValue(roomRef, snapshot => {
+        state.room = snapshot.val();
+        if (!state.room) {
+          showToast('방이 존재하지 않거나 삭제되었습니다.');
+          resetLocalState();
+          return;
+        }
+
+        // 권한/참여 확인
+        if (state.role === 'host' && state.room.hostUid !== state.uid) {
+          showToast('이 방의 사회자 정보가 일치하지 않습니다.');
+          resetLocalState();
+          return;
+        }
+        if (state.role === 'student' && !state.room.players?.[state.uid]) {
+          showToast('방에서 나가졌습니다.');
+          resetLocalState();
+          return;
+        }
+        render();
+      });
+      render();
+    }
+
+    async function restorePreviousSession() {
+      if (state.restored || !state.uid) return;
+      state.restored = true;
+      const saved = getSavedSession();
+      if (!saved?.roomCode || !saved?.role) {
+        render();
+        return;
+      }
+      const snap = await get(ref(db, `rooms/${saved.roomCode}`));
+      const room = snap.val();
+      if (!room) {
+        clearSession();
+        render();
+        return;
+      }
+      if (saved.role === 'host' && room.hostUid === state.uid) {
+        state.role = 'host';
+        subscribeRoom(saved.roomCode);
+        return;
+      }
+      if (saved.role === 'student' && room.players?.[state.uid]) {
+        state.role = 'student';
+        subscribeRoom(saved.roomCode);
+        return;
+      }
+      clearSession();
+      render();
+    }
+
+    async function startGame() {
+      const roomRef = currentRoomRef();
+      const result = await runTransaction(roomRef, room => {
+        if (!room || room.hostUid !== state.uid || room.phase !== 'waiting') return room;
+        room.phase = 'running';
+        room.startedAt = now();
+        room.offers = {};
+        room.trades = {};
+        room.notifications ||= {};
+        room.players ||= {};
+        Object.values(room.players).forEach(player => {
+          player.points = 500;
+          player.state = 'available';
+          player.offerId = null;
+          player.tradeId = null;
+        });
+        return room;
+      });
+      if (result.committed) showToast('게임을 시작했습니다.');
+    }
+
+    async function endGame() {
+      const roomRef = currentRoomRef();
+      const result = await runTransaction(roomRef, room => {
+        if (!room || room.hostUid !== state.uid) return room;
+        room.phase = 'ended';
+        room.endedAt = now();
+        room.offers = {};
+        room.notifications ||= {};
+        room.players ||= {};
+        Object.values(room.players).forEach(player => {
+          player.state = 'available';
+          player.offerId = null;
+          player.tradeId = null;
+        });
+        return room;
+      });
+      if (result.committed) showToast('게임이 종료되었습니다.');
+    }
+
+    async function leaveRoom() {
+      if (!state.roomCode) {
+        resetLocalState();
+        return;
+      }
+
+      if (state.role === 'host') {
+        resetLocalState();
+        return;
+      }
+
+      const roomRef = currentRoomRef();
+      await runTransaction(roomRef, room => {
+        if (!room || !room.players?.[state.uid]) return room;
+        const me = room.players[state.uid];
+
+        if (me.offerId && room.offers?.[me.offerId]) {
+          const offer = room.offers[me.offerId];
+          const otherUid = offer.from === state.uid ? offer.to : offer.from;
+          if (room.players?.[otherUid]) {
+            room.players[otherUid].state = 'available';
+            room.players[otherUid].offerId = null;
+          }
+          delete room.offers[me.offerId];
+        }
+
+        if (me.tradeId && room.trades?.[me.tradeId]) {
+          const trade = room.trades[me.tradeId];
+          const otherUid = trade.a === state.uid ? trade.b : trade.a;
+          if (room.players?.[otherUid]) {
+            room.players[otherUid].state = 'available';
+            room.players[otherUid].tradeId = null;
+          }
+          delete room.trades[me.tradeId];
+        }
+
+        delete room.players[state.uid];
+        return room;
+      });
+
+      resetLocalState();
+    }
+
+    async function proposeTrade(targetUid) {
+      if (!targetUid || targetUid === state.uid) return;
+      const offerId = makeId('offer');
+      const roomRef = currentRoomRef();
+
+      const result = await runTransaction(roomRef, room => {
+        if (!room || room.phase !== 'running') return room;
+        const me = room.players?.[state.uid];
+        const target = room.players?.[targetUid];
+        if (!me || !target) return room;
+        if (me.state !== 'available' || target.state !== 'available') return room;
+        room.offers ||= {};
+        room.notifications ||= {};
+        room.offers[offerId] = {
+          id: offerId,
+          from: state.uid,
+          to: targetUid,
+          status: 'pending',
+          createdAt: now()
+        };
+        me.state = 'pending_out';
+        me.offerId = offerId;
+        target.state = 'pending_in';
+        target.offerId = offerId;
+        return room;
+      });
+
+      if (result.committed) showToast('거래 제안을 보냈습니다.');
+      else showToast('지금은 해당 학생에게 제안할 수 없습니다.');
+    }
+
+    async function rejectOffer() {
+      const offerId = state.pendingOfferId;
+      if (!offerId) return;
+      const roomRef = currentRoomRef();
+
+      const result = await runTransaction(roomRef, room => {
+        if (!room) return room;
+        const offer = room.offers?.[offerId];
+        if (!offer || offer.status !== 'pending' || offer.to !== state.uid) return room;
+        const from = room.players?.[offer.from];
+        const to = room.players?.[offer.to];
+        if (from) {
+          from.state = 'available';
+          from.offerId = null;
+        }
+        if (to) {
+          to.state = 'available';
+          to.offerId = null;
+        }
+        room.notifications ||= {};
+        room.notifications[offer.from] = {
+          type: 'offer_rejected',
+          message: '거절되었습니다.',
+          ts: now()
+        };
+        delete room.offers[offerId];
+        return room;
+      });
+
+      if (result.committed) hideIncomingOffer();
+    }
+
+    async function acceptOffer() {
+      const offerId = state.pendingOfferId;
+      if (!offerId) return;
+      const tradeId = makeId('trade');
+      const roomRef = currentRoomRef();
+
+      const result = await runTransaction(roomRef, room => {
+        if (!room || room.phase !== 'running') return room;
+        const offer = room.offers?.[offerId];
+        if (!offer || offer.status !== 'pending' || offer.to !== state.uid) return room;
+        const a = room.players?.[offer.from];
+        const b = room.players?.[offer.to];
+        if (!a || !b) return room;
+        if (a.state !== 'pending_out' || b.state !== 'pending_in') return room;
+
+        room.trades ||= {};
+        room.trades[tradeId] = {
+          id: tradeId,
+          a: offer.from,
+          b: offer.to,
+          status: 'active',
+          startedAt: now(),
+          expiresAt: now() + 60000,
+          aChoice: null,
+          bChoice: null,
+          resultType: null,
+          resolvedAt: null,
+          returnAt: null
+        };
+
+        a.points = Number(a.points || 0) - 100;
+        b.points = Number(b.points || 0) - 100;
+        a.state = 'trading';
+        b.state = 'trading';
+        a.offerId = null;
+        b.offerId = null;
+        a.tradeId = tradeId;
+        b.tradeId = tradeId;
+
+        delete room.offers[offerId];
+        return room;
+      });
+
+      if (result.committed) {
+        hideIncomingOffer();
+        showToast('거래소로 이동합니다.');
+      }
+    }
+
+    function settleTrade(room, trade) {
+      const a = room.players?.[trade.a];
+      const b = room.players?.[trade.b];
+      if (!a || !b) return room;
+      const aChoice = trade.aChoice;
+      const bChoice = trade.bChoice;
+
+      if (aChoice === 'coop' && bChoice === 'coop') {
+        a.points = Number(a.points || 0) + 200;
+        b.points = Number(b.points || 0) + 200;
+        trade.resultType = 'cc';
+      } else if (aChoice === 'reject' && bChoice === 'reject') {
+        trade.resultType = 'dd';
+      } else {
+        trade.resultType = 'cd';
+        if (aChoice === 'coop' && bChoice === 'reject') {
+          a.points = Number(a.points || 0) - 100;
+          b.points = Number(b.points || 0) + 250;
+        } else if (aChoice === 'reject' && bChoice === 'coop') {
+          a.points = Number(a.points || 0) + 250;
+          b.points = Number(b.points || 0) - 100;
+        }
+      }
+
+      trade.status = 'resolved';
+      trade.resolvedAt = now();
+      trade.returnAt = now() + 10000;
+      return room;
+    }
+
+    async function submitTradeChoice(choice) {
+      if (!['coop', 'reject'].includes(choice)) return;
+      const me = getPlayer();
+      if (!me?.tradeId) return;
+      const tradeId = me.tradeId;
+      const roomRef = currentRoomRef();
+
+      const result = await runTransaction(roomRef, room => {
+        if (!room) return room;
+        const trade = room.trades?.[tradeId];
+        const player = room.players?.[state.uid];
+        if (!trade || !player || player.tradeId !== tradeId || trade.status !== 'active') return room;
+
+        if (trade.a === state.uid) {
+          if (trade.aChoice) return room;
+          trade.aChoice = choice;
+        } else if (trade.b === state.uid) {
+          if (trade.bChoice) return room;
+          trade.bChoice = choice;
+        } else {
+          return room;
+        }
+
+        if (trade.aChoice && trade.bChoice) {
+          settleTrade(room, trade);
+        }
+
+        return room;
+      });
+
+      if (result.committed) {
+        showToast(`${choice === 'coop' ? '협력' : '거절'}을 선택했습니다.`);
+      }
+    }
+
+    async function timeoutTrade(tradeId) {
+      const key = `timeout_${tradeId}`;
+      if (AUTO_KEYS_IN_FLIGHT.has(key)) return;
+      AUTO_KEYS_IN_FLIGHT.add(key);
+
+      try {
+        const roomRef = currentRoomRef();
+        await runTransaction(roomRef, room => {
+          if (!room) return room;
+          const trade = room.trades?.[tradeId];
+          if (!trade || trade.status !== 'active') return room;
+          if ((trade.expiresAt || 0) > now()) return room;
+          trade.status = 'timeout';
+          trade.resultType = 'timeout';
+          trade.resolvedAt = now();
+          trade.returnAt = now() + 10000;
+          return room;
+        });
+      } finally {
+        setTimeout(() => AUTO_KEYS_IN_FLIGHT.delete(key), 1200);
+      }
+    }
+
+    async function closeTradeAndReturn(tradeId) {
+      if (!tradeId || !state.roomCode) return;
+      const key = `close_${tradeId}`;
+      if (AUTO_KEYS_IN_FLIGHT.has(key)) return;
+      AUTO_KEYS_IN_FLIGHT.add(key);
+
+      try {
+        const roomRef = currentRoomRef();
+        await runTransaction(roomRef, room => {
+          if (!room) return room;
+          const trade = room.trades?.[tradeId];
+          if (!trade) return room;
+          if (!['resolved', 'timeout', 'closed'].includes(trade.status)) return room;
+          if ((trade.returnAt || 0) > now()) {
+            // 사용자가 나가기 버튼을 눌렀다면 즉시 종료 허용
+          }
+          const a = room.players?.[trade.a];
+          const b = room.players?.[trade.b];
+          if (a && a.tradeId === tradeId) {
+            a.tradeId = null;
+            a.state = 'available';
+          }
+          if (b && b.tradeId === tradeId) {
+            b.tradeId = null;
+            b.state = 'available';
+          }
+          trade.status = 'closed';
+          trade.closedAt = now();
+          trade.returnAt = now();
+          return room;
+        });
+      } finally {
+        setTimeout(() => AUTO_KEYS_IN_FLIGHT.delete(key), 1200);
+      }
+    }
+
+    function resetLocalState() {
+      if (state.roomUnsub) state.roomUnsub();
+      state.roomUnsub = null;
+      state.room = null;
+      state.roomCode = null;
+      state.role = null;
+      state.pendingOfferId = null;
+      clearSession();
+      hideIncomingOffer();
+      render();
+    }
+
+    els.createRoomBtn.addEventListener('click', createRoom);
+    els.joinRoomBtn.addEventListener('click', joinRoom);
+    els.acceptOfferBtn.addEventListener('click', acceptOffer);
+    els.rejectOfferBtn.addEventListener('click', rejectOffer);
+    incomingOfferModal.addEventListener('click', (e) => {
+      if (e.target === incomingOfferModal) hideIncomingOffer();
+    });
+
+    els.joinCodeInput.addEventListener('input', () => {
+      els.joinCodeInput.value = els.joinCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+    });
+
+    onAuthStateChanged(auth, async user => {
+      if (user) {
+        state.uid = user.uid;
+        authStateEl.className = 'badge badge-blue';
+        authStateEl.textContent = '연결됨';
+        await restorePreviousSession();
+        render();
+      } else {
+        authStateEl.className = 'badge badge-gray';
+        authStateEl.textContent = '익명 인증 중...';
+      }
+    });
+
+    signInAnonymously(auth).catch(error => {
+      console.error(error);
+      showToast('익명 로그인에 실패했습니다. Firebase 설정을 확인해 주세요.');
+    });
+
+    setInterval(trackTimersAndNotifications, 500);
+    render();
+  </script>
+</body>
+</html>
